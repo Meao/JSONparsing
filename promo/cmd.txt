@@ -1,0 +1,4 @@
+conda create -n cvenv python=3.8 anaconda
+conda activate cvenv
+conda env export > my_environment.yml
+python "par.py"
