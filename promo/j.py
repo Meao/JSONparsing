@@ -2,34 +2,16 @@ from flatten_json import flatten
 import json
 import os
 import pandas as pd
+
 for files in os.listdir('../promo'):
     print(files)
 # from pandas.io.json import json_normalize
 # json.loads is faster than pd.read_json
-with open('export_20210913-1650_520_2670.json') as f:
+with open('export_20210913-1649_435_7429.json') as f:
     d = json.load(f)
 
-# def json_extract(obj, key):
-#     """Recursively fetch values from nested JSON."""
-#     arr = []
 
-#     def extract(obj, arr, key):
-#         """Recursively search for values of key in JSON tree."""
-#         if isinstance(obj, dict):
-#             for k, v in obj.items():
-#                 if isinstance(v, (dict, list)):
-#                     extract(v, arr, key)
-#                 elif k == key:
-#                     arr.append(v)
-#         elif isinstance(obj, list):
-#             for item in obj:
-#                 extract(item, arr, key)
-#         return arr
-
-#     values = extract(obj, arr, key)
-#     return values
-
-# # Find every instance of `Item ` in a Python dictionary.
+# # Find every instance of Item in a Python dictionary.
 # names = json_extract(d, 'Item')
 # print(names)
 # print("---------------------------------------")
@@ -81,13 +63,7 @@ items_codes_data = pd.json_normalize(data=d,
                             meta=[['Information','GoodsLists','Prices','StoreCode'],
                             ['Information','GoodsLists','DiscountType'],
                             ['Information','GoodsLists','DiscountValue'],
-                            # ['Information','GoodsLists','GoodsComposition','Value'], # NaN
-                            # ['GeneralInfo','DateBegin'],
-                            # ['GeneralInfo','DateEnd'],
-                            # ['GeneralInfo','PWCcode'],
-                            # ['Information','GoodsLists','PriceOptions','Value'],
-                            # ['Information','GoodsLists','PriceOptions','FirstValue'],
-                            # ['Information','GoodsLists','PriceOptions','Operator']
+                            # ['Information','GoodsLists','GoodsComposition','Value'], # NaN cause it's over 1 lvl to the path item function works with
                             ],
                             errors='ignore'
                             )
@@ -99,17 +75,10 @@ print("----------------------------PriceOptions+--------------------------------
 priceoptions_data = pd.json_normalize(data=d, 
                             record_path=['Information','GoodsLists','PriceOptions'], 
                             meta=[
-                            # ['Information','GoodsLists','Prices','StoreCode'],
                             ['Information','GoodsLists','DiscountType'],
                             ['Information','GoodsLists','DiscountValue'],
                             ['Information','GoodsLists','GoodsComposition'],
-                            # ['Information','GoodsLists','GoodsComposition','Value'], # TypeError: list indices must be integers or slices, not str ?????????????????????
-                            # # ['GeneralInfo','DateBegin'],
-                            # # ['GeneralInfo','DateEnd'],
-                            # # ['GeneralInfo','PWCcode'],
-                            # ['Information','GoodsLists','PriceOptions','Value'],
-                            # ['Information','GoodsLists','PriceOptions','FirstValue'],
-                            # ['Information','GoodsLists','PriceOptions','Operator']
+                            # ['Information','GoodsLists','GoodsComposition','Value'], # TypeError: list indices must be integers or slices, not str 
                             ],
                             errors='ignore'
                             )
@@ -126,38 +95,10 @@ options_data = priceoptions_data.reindex(columns = ['Value','FirstValue','Operat
 print(options_data.head())
 # else 
 print("------------------------------sublist---------------------------------------------")
-for sublist in d['Information']['GoodsLists']:
-    # print('sublist', sublist)
-    if 'GoodsComposition' in sublist:
-        print('y')
-#     new_list = [item for item in sublist['values']]
-#     print('new_list', new_list)
-# goods_data = d['Information']['GoodsLists'][1]['GoodsComposition']
-# goods_data = pd.json_normalize(data=d['Information'],  # KeyError: 'GoodsComposition'
-#                             record_path=['GoodsLists','GoodsComposition','GoodsCode'],
-#                             errors='ignore'
-#                             )
-# goods_data = pd.json_normalize(data=d['Information']['GoodsLists'],   # KeyError: 'GoodsComposition'
-#                             record_path=['GoodsComposition'],
-#                             errors='ignore'
-#                             )
-# goods_data = pd.json_normalize(data=d['Information']['GoodsLists'][1],  # only shows value for the 1st list of prices
-#                             record_path=['GoodsComposition','GoodsCode'],
-#                             meta=[
-#                             ['GoodsComposition','Value'],
-#                             ],
-#                             errors='ignore'
-#                             )
-# goods_data = pd.json_normalize(data=d['Information']['GoodsLists'][1], 
-#                             record_path=['GoodsComposition'],
-#                             errors='ignore'
-#                             )
-# goods_data = pd.json_normalize(data=d, 
-#                             record_path=['Information','GoodsLists',1,'GoodsComposition'],  # KeyError: 1
-#                             errors='ignore'
-#                             )
+
 goods_data = pd.json_normalize(data=d,record_path=['Information','GoodsLists','GoodsComposition'],errors='ignore')
-# it seems like errors='ignore does not work :(
+#  errors='ignore works for missing dict keys, but file 1 is missing a list, so could use hacks like https://stackoverflow.com/questions/32291437/pandas-json-normalize-produces-confusing-keyerror-message 
+# but anyway pandas concat tells list comprehentions is fastest and it's the way to go
 # goods_data = pd.json_normalize(data=d, 
 #                             record_path=['Information','GoodsLists','GoodsComposition'],  # KeyError: 'GoodsComposition'
 #                             errors='ignore'
@@ -167,8 +108,6 @@ print("-------------------------------merge-------------------------------------
 df = pd.merge(items_codes_data,options_data,on=['Information.GoodsLists.DiscountType','Information.GoodsLists.DiscountValue'])
 print(df.head())
 print("------------------------------column names---------------------------------------------")
-# items_data.rename(columns={0: 'Item', 1: 'SalePriceBeforePromo', 2:'SalePriceTimePromo', 3:'DatePriceBeforePromo'},inplace=True)
-# print(items_data.head())
 df.columns = ['Item',
 'SalePriceBeforePromo',
 'SalePriceTimePromo',
@@ -186,13 +125,6 @@ df.columns = ['Item',
 print(df.head())
 print("---------------------------------------------------------------------------")
 # items_data.to_excel("output.xlsx")  
-
-# print(items_data.columns)
-# prices_data = pd.json_normalize(data=information_data['Prices'], 
-#                             record_path=['StoreCode'], 
-#                             errors='ignore'
-#                             )
-# print(prices_data.head()) 
 
 # df = pd.DataFrame(d)
 # print(df.head(50))
