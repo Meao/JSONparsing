@@ -73,4 +73,4 @@ def parse_json():
 res_df = parse_json()
 # print(res_df.head())
 # print(res_df.info())
-res_df.to_excel("result.xlsx")
+res_df.to_excel("result.xlsx", na_rep='None', float_format="%.2f", index=False)
